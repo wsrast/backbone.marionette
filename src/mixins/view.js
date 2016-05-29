@@ -12,7 +12,18 @@ import UIMixin from './ui';
 import View from '../view';
 import { triggerMethod } from '../trigger-method';
 
-var ViewMixin = {
+// MixinOptions
+// - behaviors
+// - childViewEventPrefix
+// - childViewEvents
+// - childViewTriggers
+// - collectionEvents
+// - modelEvents
+// - triggers
+// - ui
+
+
+const ViewMixin = {
   supportsRenderLifecycle: true,
   supportsDestroyLifecycle: true,
 
@@ -32,16 +43,6 @@ var ViewMixin = {
 
   isAttached() {
     return !!this._isAttached;
-  },
-
-  // Mix in template context methods. Looks for a
-  // `templateContext` attribute, which can either be an
-  // object literal, or a function that returns an object
-  // literal. All methods and attributes from this object
-  // are copies to the object passed in.
-  mixinTemplateContext: function(target = {}) {
-    const templateContext = this.getValue(this.getOption('templateContext'));
-    return _.extend(target, templateContext);
   },
 
   // Overriding Backbone.View's `delegateEvents` to handle
@@ -70,7 +71,11 @@ var ViewMixin = {
   },
 
   _getEvents: function(eventsArg) {
-    const events = this.getValue(eventsArg || this.events);
+    const events = eventsArg || this.events;
+
+    if (_.isFunction(events)) {
+      return this.normalizeUIKeys(events());
+    }
 
     return this.normalizeUIKeys(events);
   },
@@ -191,8 +196,8 @@ var ViewMixin = {
 
   // Cache `childViewEvents` and `childViewTriggers`
   _buildEventProxies: function() {
-    this._childViewEvents = this.getValue(this.getOption('childViewEvents'));
-    this._childViewTriggers = this.getValue(this.getOption('childViewTriggers'));
+    this._childViewEvents = _.result(this, 'childViewEvents');
+    this._childViewTriggers = _.result(this, 'childViewTriggers');
   },
 
   _triggerEventOnParentLayout: function(eventName, ...args) {
@@ -202,7 +207,7 @@ var ViewMixin = {
     }
 
     // invoke triggerMethod on parent view
-    const eventPrefix = layoutView.getOption('childViewEventPrefix');
+    const eventPrefix = _.result(layoutView, 'childViewEventPrefix');
     const prefixedEventName = eventPrefix + ':' + eventName;
 
     layoutView.triggerMethod(prefixedEventName, ...args);
