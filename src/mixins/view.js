@@ -3,6 +3,7 @@
 
 import Backbone from 'backbone';
 import _ from 'underscore';
+import isNodeAttached from '../utils/isNodeAttached';
 import MarionetteError from '../error';
 import BehaviorsMixin from './behaviors';
 import CommonMixin from './common';
@@ -29,13 +30,13 @@ const ViewMixin = {
 
   _isDestroyed: false,
 
-  isDestroyed: function() {
+  isDestroyed() {
     return !!this._isDestroyed;
   },
 
   _isRendered: false,
 
-  isRendered: function() {
+  isRendered() {
     return !!this._isRendered;
   },
 
@@ -45,9 +46,25 @@ const ViewMixin = {
     return !!this._isAttached;
   },
 
+  // Overriding Backbone.View's `setElement` to handle
+  // if an el was previously defined. If so, the view might be
+  // rendered or attached on setElement.
+  setElement() {
+    const hasEl = !!this.el;
+
+    Backbone.View.prototype.setElement.apply(this, arguments);
+
+    if (hasEl) {
+      this._isRendered = !!this.$el.length;
+      this._isAttached = isNodeAttached(this.el);
+    }
+
+    return this;
+  },
+
   // Overriding Backbone.View's `delegateEvents` to handle
   // `events` and `triggers`
-  delegateEvents: function(eventsArg) {
+  delegateEvents(eventsArg) {
 
     this._proxyBehaviorViewProperties();
     this._buildEventProxies();
@@ -82,7 +99,7 @@ const ViewMixin = {
 
   // Configure `triggers` to forward DOM events to view
   // events. `triggers: {"click .foo": "do:foo"}`
-  getTriggers: function() {
+  getTriggers() {
     if (!this.triggers) { return; }
 
     // Allow `triggers` to be configured as a function
@@ -94,7 +111,7 @@ const ViewMixin = {
   },
 
   // Handle `modelEvents`, and `collectionEvents` configuration
-  delegateEntityEvents: function() {
+  delegateEntityEvents() {
     this._delegateEntityEvents(this.model, this.collection);
 
     // bind each behaviors model and collection events
@@ -104,7 +121,7 @@ const ViewMixin = {
   },
 
   // Handle unbinding `modelEvents`, and `collectionEvents` configuration
-  undelegateEntityEvents: function() {
+  undelegateEntityEvents() {
     this._undelegateEntityEvents(this.model, this.collection);
 
     // unbind each behaviors model and collection events
@@ -114,7 +131,7 @@ const ViewMixin = {
   },
 
   // Internal helper method to verify whether the view hasn't been destroyed
-  _ensureViewIsIntact: function() {
+  _ensureViewIsIntact() {
     if (this._isDestroyed) {
       throw new MarionetteError({
         name: 'ViewDestroyedError',
@@ -124,7 +141,7 @@ const ViewMixin = {
   },
 
   // Handle destroying the view and its children.
-  destroy: function(...args) {
+  destroy(...args) {
     if (this._isDestroyed) { return this; }
     const shouldTriggerDetach = !!this._isAttached;
 
@@ -159,7 +176,7 @@ const ViewMixin = {
     return this;
   },
 
-  bindUIElements: function() {
+  bindUIElements() {
     this._bindUIElements();
     this._bindBehaviorUIElements();
 
@@ -167,14 +184,14 @@ const ViewMixin = {
   },
 
   // This method unbinds the elements specified in the "ui" hash
-  unbindUIElements: function() {
+  unbindUIElements() {
     this._unbindUIElements();
     this._unbindBehaviorUIElements();
 
     return this;
   },
 
-  getUI: function(name) {
+  getUI(name) {
     this._ensureViewIsIntact();
     return this._getUI(name);
   },
@@ -185,7 +202,7 @@ const ViewMixin = {
 
   // import the `triggerMethod` to trigger events with corresponding
   // methods if the method exists
-  triggerMethod: function(...args) {
+  triggerMethod(...args) {
     const ret = triggerMethod.apply(this, args);
 
     this._triggerEventOnBehaviors(...args);
@@ -200,7 +217,7 @@ const ViewMixin = {
     this._childViewTriggers = _.result(this, 'childViewTriggers');
   },
 
-  _triggerEventOnParentLayout: function(eventName, ...args) {
+  _triggerEventOnParentLayout(eventName, ...args) {
     const layoutView = this._parentView();
     if (!layoutView) {
       return;
@@ -230,7 +247,7 @@ const ViewMixin = {
 
   // Walk the _parent tree until we find a view (if one exists).
   // Returns the parent view hierarchically closest to this view.
-  _parentView: function() {
+  _parentView() {
     let parent = this._parent;
 
     while (parent) {
