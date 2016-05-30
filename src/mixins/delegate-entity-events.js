@@ -1,3 +1,5 @@
+import _ from 'underscore';
+
 import {
   bindEntityEvents,
   unbindEntityEvents
