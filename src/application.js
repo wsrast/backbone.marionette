@@ -56,8 +56,9 @@ const Application = MarionetteObject.extend({
 
   // kick off all of the application's processes.
   start: function(options) {
-    this.triggerMethod('before:start', options);
-    this.triggerMethod('start', options);
+    this.triggerMethod('before:start', this, options);
+    this.triggerMethod('start', this, options);
+    return this;
   }
 
 });
