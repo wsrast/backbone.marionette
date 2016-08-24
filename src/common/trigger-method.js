@@ -7,11 +7,17 @@ import getOption from './get-option';
 // split the event name on the ":"
 const splitter = /(^|:)(\w)/gi;
 
-// take the event section ("section1:section2:section3")
-// and turn it in to uppercase name onSection1Section2Section3
 function getEventName(match, prefix, eventName) {
   return eventName.toUpperCase();
 }
+
+// take the event section ("section1:section2:section3")
+// and turn it in to uppercase name onSection1Section2Section3
+function getOnMethodName(event) {
+  return 'on' + event.replace(splitter, getEventName);
+}
+
+getOnMethodName = _.memoize(getOnMethodName);
 
 // Trigger an event and/or a corresponding method name. Examples:
 //
@@ -20,20 +26,20 @@ function getEventName(match, prefix, eventName) {
 //
 // `this.triggerMethod("foo:bar")` will trigger the "foo:bar" event and
 // call the "onFooBar" method.
-export function triggerMethod(event, ...args) {
+export function triggerMethod(event) {
   // get the method name from the event name
-  const methodName = 'on' + event.replace(splitter, getEventName);
+  const methodName = getOnMethodName(event);
+
   const method = getOption.call(this, methodName);
+
   let result;
 
-  // call the onMethodName if it exists
   if (_.isFunction(method)) {
-    // pass all args, except the event name
-    result = method.apply(this, args);
+    result = method.apply(this, _.drop(arguments));
   }
 
   // trigger the event
-  this.trigger(event, ...args);
+  this.trigger.apply(this, arguments);
 
   return result;
 }
@@ -42,7 +48,7 @@ export function triggerMethod(event, ...args) {
 //
 // e.g. `Marionette.triggerMethodOn(view, 'show')`
 // will trigger a "show" event or invoke onShow the view.
-export function triggerMethodOn(context, ...args) {
+export function triggerMethodOn(context) {
   const fnc = _.isFunction(context.triggerMethod) ? context.triggerMethod : triggerMethod;
-  return fnc.apply(context, args);
+  return fnc.apply(context, _.drop(arguments));
 }
