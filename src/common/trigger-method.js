@@ -2,7 +2,6 @@
 // --------------
 
 import _         from 'underscore';
-import getOption from './get-option';
 
 // split the event name on the ":"
 const splitter = /(^|:)(\w)/gi;
@@ -30,18 +29,16 @@ export function triggerMethod(event) {
   // get the method name from the event name
   const methodName = getOnMethodName(event);
 
-  const method = getOption.call(this, methodName);
-
-  let result;
+  const method = this[methodName];
 
   if (_.isFunction(method)) {
-    result = method.apply(this, _.drop(arguments));
+    method.apply(this, _.drop(arguments));
   }
 
   // trigger the event
   this.trigger.apply(this, arguments);
 
-  return result;
+  return this;
 }
 
 // triggerMethodOn invokes triggerMethod on a specific context
@@ -50,5 +47,7 @@ export function triggerMethod(event) {
 // will trigger a "show" event or invoke onShow the view.
 export function triggerMethodOn(context) {
   const fnc = _.isFunction(context.triggerMethod) ? context.triggerMethod : triggerMethod;
-  return fnc.apply(context, _.drop(arguments));
+  fnc.apply(context, _.drop(arguments));
+
+  return this;
 }
