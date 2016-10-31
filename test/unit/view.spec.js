@@ -4,7 +4,7 @@ describe('base view', function() {
   describe('when creating a view', function() {
     beforeEach(function() {
       this.initializeStub = this.sinon.stub();
-      this.viewConstructorSpy = this.sinon.spy(Backbone, 'View');
+      this.viewConstructorSpy = this.sinon.spy(Backbone.View.prototype, 'constructor');
 
       this.View = Marionette.View.extend({
         initialize: this.initializeStub
